@@ -1,1 +1,1 @@
-# burn-cool
+# Hot&Cool
