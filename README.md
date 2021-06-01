@@ -59,8 +59,15 @@ The first step to do is access to the Nuclio dashboard and create a new project 
 
 ## **Architecture**
 
-<p align="center"><img src="./assets/architecture.png" height="500"/></p>
+<p align="center"><img src="./assets/architecture.png" width="90%"/></p>
 
+- To start, the **sensor** send temperature to nuclio function (sensor write on **iot/sensors/temperature**)
+- The **nuclio function** takes an action (eg. if the temperature is to low write on iot/devices/conditoner topic)
+- The **conditioner** (or the **thermostat**) recieves the temperature and the power to start itself
+  - if the temperature is too low (or high) is **triggered a iftt event** to send an email to the user
+- Now, the conditioner (or the thermostat) write on **iot/sensors/temperature** topic to simulate the **dropping** (or **rising**) of temperature
+- The **nuclio funtion also write on iot/devices/tablet to log** what is happening 
+  
 <br>
 
 ## **Prerequisites**
