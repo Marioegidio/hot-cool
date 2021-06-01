@@ -1,6 +1,5 @@
 
-# Serverless Computing for IoT
-
+# **Serverless Computing for IoT**
 
 ## Serverless
 
@@ -25,19 +24,50 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 <br>
 
-# Hot&Cool installation
+# **Hot&Cool installation**
 
-#### Project Structure
+### **Structure**
 
-* **[Hot&Cool](#Hot&Cool)**
+* **[Hot&Cool](#hot&cool)**
+* **[Architecture](#architecture)**
 * **[Prerequisites](#prerequisites)**
 * **[Installation](#installation)**
-* **[Use](#use)**
+* **[Run Project](#run-project)**
+
+<br>
 <br>
 
 
+## **Hot&Cool**
 
-## Prerequisites
+Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.<br><br>
+In detail it provides the simulation of a temperature sensors that sends the temperature on a topic. When arrives a new temperature is triggered a function that write on a determinated topic. 
+- if the temperature is less than 22° writes on the thermostat topic to start all radiators with some power (the power depends on the temperature)
+- if the temperature is more than 26° writes on the conditioner topic to start the conditioner with some power (the power depends on the temperature)
+- if the temperature is between 22° and 26° turns off the conditioner and all radiators     
+In any case is sent a log on the tablet topic to show to the user what is happening.   
+
+<br>
+
+The application is composed by five functions:
+
+* **[Temperature Handler](#temperature-handler-function)**, is triggered by a new MQTT message on the topic "iot/sensors/temperature".
+* **[Temperature Sensor](#send-random-temperature-function)**, sends a new temperature value on the MQTT on the topic "iot/sensors/temperature" once a minute.
+* **[Tablet](#tablet)**, logs the behavior of the Temperature Handler function, this functions is subscribed to "iot/devices/tablet". Is a JavaScript function for Node.js and is executed on an external machine. 
+* **[Smartphone](#iot-client)**, a general purpose Android MQTT Client subcribed to "iot/devices/tablet" to show to the user what is happening.
+* **[Conidtioner](#conditioner)**, simulates the behavior of the air conditioner. This functions is subscribed to "iot/devices/conditioner". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
+* **[Thermostat](#thermostat)**, simulates the behavior of the thermostat. This functions is subscribed to "iot/devices/thermostat". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
+The first step to do is access to the Nuclio dashboard and create a new project named IOT-MQTT.
+
+<br>
+
+## **Architecture**
+
+<p align="center"><img src="./assets/architecture.png" height="500"/></p>
+
+<br>
+
+## **Prerequisites**
 - OS: 
     - Ubuntu 18.04 LTS
 - Software:
@@ -45,10 +75,12 @@ In the IoT era, you cannot afford downtime, as there are many essential services
     - Nuclio (Serverless computing provider)
     - RabbitMQ (AMQP and MQTT message broker)
     - Node.js
+- Service:
+  - IFTT account 
 
 <br>
 
-## Installation
+## **Installation**
 
 This project is made on top of one local machine an Linux Ubuntu 18.04 LTS machine. 
 
@@ -106,8 +138,8 @@ Docker is a tool designed to make it easier to create, deploy, and run applicati
     
     <br>
 
-<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
-<!-- ### Docker Compose
+---------------------------------------------------------------------------------------------------------------------------- 
+### Docker Compose
 
 Compose is a tool for defining and running multi-container Docker applications. With Compose, you use a YAML file to configure your application’s services.
 
@@ -116,7 +148,8 @@ Install Docker Compose using the Docker Compose installation [guide](https://doc
 ```sh
 $ sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 $ sudo chmod +x /usr/local/bin/docker-compose
-``` -->
+```
+<br>
 
 ------------------------------------------------------------------------------------------------------------------------------
 ### Nuclio 
@@ -147,6 +180,28 @@ Browse to http://localhost:9000, and login using username: guest and password: g
 
 <br>
 
+----------------------------------------------------------------------------------------------------------------------------
+
+### IFTT MAIL TRIGGER 
+
+Create an [IFTT](https://ifttt.com) account.
+
+Then you need to create a new Applet:
+
+- Use WebHooks in _"if"_ section:
+<p align=center><img src="./assets/webhooks.png" width="50%"/> </p>
+
+- Use Gmail in _"then"_ section:
+<p align=center>  <img src="./assets/gmail.png" width="50%"/></p>
+
+- Set the mail:
+<p align=center> <img src="./assets/mail.png" width="50%"/></p>
+
+- Save your key to invoke the http request
+
+
+<br>
+
 ------------------------------------------------------------------------------------------------------------------------------
 
 ### Library for MQTT clients
@@ -166,13 +221,17 @@ There are different libraries for many languages for interacting with protocol M
 
 <br>
 
-#### MQTT Android Clients
+### MQTT Android Clients
 
 General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.gbn.mqttclient) for Android.
 
 -----------------------------------------------------------------------------------------------------------------------------
 
-## use
+<br>
+
+## **Run Project**
+
+<br>
 
 ### Temperature Handler Function
 
@@ -236,26 +295,44 @@ The Send Random Temperature Function is written in pure JavaScript and exploits 
 
 The JavaScript code is [here](src/sensors/temperature_sensor.js)
 
-The following commands execute the temperature sensor simulation:
+First of all you need to create a file _".env"_ in _"src/sensors"_ directory and add:
+
+```
+    IP = YOUR_IP
+```
+_(You need to your ip before to save the file.)_
+
+The next step is to execute the temperature sensor simulation:
 
 ```sh
   $ cd src/sensors/
   $ npm install
   $ node temperature_sensor.js
 ```
+<br>
 
 ### Tablet
 
 The tablet function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to receive messages on the queue "iot/devices/tablet". 
 The code is [here](src/devices/tablet.js)
 
-The following commands execute the tablet simulation:
+First of all you need to create a file _".env"_ in _"src/devices"_ directory and add:
+
+```
+    IFTT_KEY = YOUR_IFTT_KEY
+    IP = YOUR_IP
+```
+_(You need to set your key and your ip before to save the file.)_
+
+The next step is to execute the temperature tablet simulation:
 
 ```sh
   $ cd src/devices/
   $ npm install
   $ node tablet.js
 ```
+
+<br>
 
 ### Conditioner
 
@@ -282,10 +359,13 @@ The following commands execute the thermostat simulation:
   $ npm install
   $ node thermostat.js
 ```
+
+<br>
+
 ### IoT Client
 
 The IoT Client could be written in any language for any platform that support the MQTT protocol. For this example we have used a general purpose  [MQTT Android Client](https://play.google.com/store/apps/details?id=com.gbn.mqttclient). In this app you can subscribe to a topic. (In our case you have to subscribe to "iot/devices/tablet"). After created the connection you can easily recieve values on this (or other) topic.
 
-<p align="center"><img src="/assets/mqtt_android.png" width="500"/></p>
+<p align="center"><img src="./assets/mqtt_client.jpg" height="500"/></p>
 
 <br>
