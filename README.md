@@ -278,7 +278,7 @@ spec:
 
 For deploying the function 
 - Set your IP in the url of _yaml_ file
-- Create new prject on Nuclio
+- Create a new project on Nuclio
 - Access, from the Nuclio dashboard, to the project _YOUR-PROJECT-NAME_ and create new function. 
 - When the system ask to create new function you have to select the import form yaml
 - Load the file "src/sensors/temperaturehandlermqtt.yaml".
@@ -296,7 +296,7 @@ First of all you need to create a file _".env"_ in _"src/sensors"_ directory and
 ```
     IP = YOUR_IP
 ```
-_(You need to your ip before to save the file.)_
+_(You need to set your ip before to save the file.)_
 
 The next step is to execute the temperature sensor simulation:
 
