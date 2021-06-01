@@ -41,91 +41,71 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.
 
-The application is composed by four functions:
+The application is composed by five functions:
 
-* **[Consume Temperature Function](#consume-temperature-function)**, is triggered by a new MQTT message on the topic "iot/sensors/temperature".
-* **[Send Random Temperature Function](#send-random-temperature-function)**, sends a new temperature value on the MQTT on the topic "iot/sensors/temperature".
-* **[Logger](#logger)**, logs the invocation of the consume function, this functions is in waiting for a new messages on the queue AMQP "iot/logs". Is a JavaScript function for Node.js and is executed on an external machine. 
-* **[IoT Client](#iot-client)**, a general purpose Android MQTT Client.
-
+* **[Temperature Handler](#temperature-handler-function)**, is triggered by a new MQTT message on the topic "iot/sensors/temperature".
+* **[Temperature Sensor](#send-random-temperature-function)**, sends a new temperature value on the MQTT on the topic "iot/sensors/temperature" once a minute.
+* **[Tablet](#tablet)**, logs the behavior of the Temperature Handler function, this functions is subscribed to "iot/devices/tablet". Is a JavaScript function for Node.js and is executed on an external machine. 
+* **[Smartphone](#iot-client)**, a general purpose Android MQTT Client subcribed to "iot/devices/tablet" to show to the user what is happening.
+* **[Conidtioner](#conditioner)**, simulates the behavior of the air conditioner. This functions is subscribed to "iot/devices/conditioner". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
+* **[Thermostat](#thermostat)**, simulates the behavior of the thermostat. This functions is subscribed to "iot/devices/thermostat". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
 The first step to do is access to the Nuclio dashboard and create a new project named IOT-MQTT.
 
 
-### Temperature Consume Function
+### Temperature Handler Function
 
-The Temperature Consume Function is written in pure JavaScript and exploits the _amqplib_ JavaScript library to communicate on the "iot/logs" queue the invocation of the function. 
-The JavaScript code is the following:
-```javascript
-var amqp = require('amqplib');
-        var FUNCTION_NAME = "mqttconsume";
-        function send_feedback(msg){
-            var q = 'iot/logs';
-            amqp.connect('amqp://guest:guest@172.16.15.52:5672').then(function(conn) {
-                return conn.createChannel().then(function(ch) {
-                    var ok = ch.assertQueue(q, {durable: false});
-                    return ok.then(function(_qok) {
-                    ch.sendToQueue(q, Buffer.from(msg));
-                    console.log(" [x] Sent '%s'", msg);
-                    return ch.close();
-                    });
-                }).finally(function() { 
-                        conn.close();
-                    });
-            }).catch(console.warn);
-        }
+The Temperature Handler Function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to communicate on the "iot/devices/conditioner", "iot/devices/thermostat" and "iot/devices/tablet" topics the invocation of the function. 
+The JavaScript code is [here](src/nuclio_functions/temperatureHandlerMqtt-nuclio.js)
 
-        function bin2string(array){
-          var result = "";
-          for(var i = 0; i < array.length; ++i){
-            result+= (String.fromCharCode(array[i]));
-          }
-          return result;
-        }
-
-        exports.handler = function(context, event) {
-            var _event = JSON.parse(JSON.stringify(event));
-            var _data = bin2string(_event.body.data);
-
-            context.callback("feedback "+_data);
-
-            console.log("TRIGGER "+_data);
-            send_feedback("Invoked Function MQTT: "+FUNCTION_NAME+" received "+_data);
-        };
-```
-
-The function is deployed using the Docker compose specifics for Nuclio. This is achieved by define a new yaml file that declares all functions specifications and source code. The source code of the function (the JavaScript code) is encoded in base64 and copied in the attribute "functionSourceCode",  moreover, is defined a new trigger on the mqtt protocol that allows to automatically invoke the function when a new message is coming on the topic "iot/sensors/temperature". Since the functions exploits the amqplib in the "commands" attribute is added the command to install on Node.js the amqplib (npm install amqplib).
+The function is deployed using the Docker compose specifics for Nuclio. This is achieved by define a new yaml file that declares all functions specifications and source code. The source code of the function (the JavaScript code) is encoded in base64 and copied in the attribute "functionSourceCode",  moreover, is defined a new trigger on the mqtt protocol that allows to automatically invoke the function when a new message is coming on the topic "iot/sensors/temperature". Since the functions exploits the mqtt in the "commands" attribute is added the command to install on Node.js the mqtt (npm install mqtt).
 
 ```yaml
-apiVersion: "nuclio.io/v1"
-kind: Function
 metadata:
-  name: mqttconsume
-  namespace: nuclio
+  name: temperaturehandlermqtt
+  labels: {}
+  annotations: {}
 spec:
-  handler: "main:handler"
-  description: "Function the is called when a new message is arrived on the iot/sensors/temperature queue, //the function send back a feedback on the iot/logs queue."
-  runtime: nodejs
-  image: "nuclio/processor-mqttconsume:latest"
-  minReplicas: 1
-  maxReplicas: 1
-  targetCPU: 75
+  description: ""
+  disable: false
   triggers:
-    myMqttTrigger:
-      kind: "mqtt"
-      url: "guest:guest@172.16.15.52:1883"
+    temperatureTrigger:
+      kind: mqtt
       attributes:
-          subscriptions:
+        subscriptions:
           - topic: iot/sensors/temperature
-            qos: 0
+            qos: 2
+      workerAllocatorName: ""
+      url: "guest:guest@YOUR_IP:1883"
+      username: ""
+      password: ""
+  env: []
+  handler: "main:handler"
+  runtime: nodejs
   build:
-    functionSourceCode: dmFyIGFtcXAgPSByZXF1aXJlKCdhbXFwbGliJyk7CiAgICAgICAgdmFyIEZVTkNUSU9OX05BTUUgPSAibXF0dGNvbnN1bWUiOwogICAgICAgIGZ1bmN0aW9uIHNlbmRfZmVlZGJhY2sobXNnKXsKICAgICAgICAgICAgdmFyIHEgPSAnaW90L2xvZ3MnOwogICAgICAgICAgICBhbXFwLmNvbm5lY3QoJ2FtcXA6Ly9ndWVzdDpndWVzdEAxNzIuMTYuMTUuNTI6NTY3MicpLnRoZW4oZnVuY3Rpb24oY29ubikgewogICAgICAgICAgICAgICAgcmV0dXJuIGNvbm4uY3JlYXRlQ2hhbm5lbCgpLnRoZW4oZnVuY3Rpb24oY2gpIHsKICAgICAgICAgICAgICAgICAgICB2YXIgb2sgPSBjaC5hc3NlcnRRdWV1ZShxLCB7ZHVyYWJsZTogZmFsc2V9KTsKICAgICAgICAgICAgICAgICAgICByZXR1cm4gb2sudGhlbihmdW5jdGlvbihfcW9rKSB7CiAgICAgICAgICAgICAgICAgICAgY2guc2VuZFRvUXVldWUocSwgQnVmZmVyLmZyb20obXNnKSk7CiAgICAgICAgICAgICAgICAgICAgY29uc29sZS5sb2coIiBbeF0gU2VudCAnJXMnIiwgbXNnKTsKICAgICAgICAgICAgICAgICAgICByZXR1cm4gY2guY2xvc2UoKTsKICAgICAgICAgICAgICAgICAgICB9KTsKICAgICAgICAgICAgICAgIH0pLmZpbmFsbHkoZnVuY3Rpb24oKSB7IAogICAgICAgICAgICAgICAgICAgICAgICBjb25uLmNsb3NlKCk7CiAgICAgICAgICAgICAgICAgICAgfSk7CiAgICAgICAgICAgIH0pLmNhdGNoKGNvbnNvbGUud2Fybik7CiAgICAgICAgfQoKICAgICAgICBmdW5jdGlvbiBiaW4yc3RyaW5nKGFycmF5KXsKICAgICAgICAgIHZhciByZXN1bHQgPSAiIjsKICAgICAgICAgIGZvcih2YXIgaSA9IDA7IGkgPCBhcnJheS5sZW5ndGg7ICsraSl7CiAgICAgICAgICAgIHJlc3VsdCs9IChTdHJpbmcuZnJvbUNoYXJDb2RlKGFycmF5W2ldKSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gcmVzdWx0OwogICAgICAgIH0KCiAgICAgICAgZXhwb3J0cy5oYW5kbGVyID0gZnVuY3Rpb24oY29udGV4dCwgZXZlbnQpIHsKICAgICAgICAgICAgdmFyIF9ldmVudCA9IEpTT04ucGFyc2UoSlNPTi5zdHJpbmdpZnkoZXZlbnQpKTsKICAgICAgICAgICAgdmFyIF9kYXRhID0gYmluMnN0cmluZyhfZXZlbnQuYm9keS5kYXRhKTsKCiAgICAgICAgICAgIGNvbnRleHQuY2FsbGJhY2soImZlZWRiYWNrICIrX2RhdGEpOwoKICAgICAgICAgICAgY29uc29sZS5sb2coIlRSSUdHRVIgIitfZGF0YSk7CiAgICAgICAgICAgIHNlbmRfZmVlZGJhY2soIkludm9rZWQgRnVuY3Rpb24gTVFUVDogIitGVU5DVElPTl9OQU1FKyIgcmVjZWl2ZWQgIitfZGF0YSk7CiAgICAgICAgfTs=
+    image: ""
+    noCache: false
+    offline: false
+    dependencies: []
+    runtimeAttributes:
+      repositories: []
+    functionSourceCode: dmFyIG1xdHQgPSByZXF1aXJlKCdtcXR0Jyk7DQoNCmNvbnN0IEZVTkNUSU9OX05BTUUgPSAidGVtcGVyYXR1cmVIYW5kbGVyTXF0dCI7DQpjb25zdCBJUCA9ICIxOTIuMTY4LjEuNyINCmNvbnN0IENPTkRJVElPTkVSX1RPUElDID0gImlvdC9kZXZpY2VzL2NvbmRpdGlvbmVyIg0KY29uc3QgVEhFUk1PU1RBVF9UT1BJQyA9ICJpb3QvZGV2aWNlcy90aGVybW9zdGF0Ig0KY29uc3QgVEFCTEVUX1RPUElDID0gImlvdC9kZXZpY2VzL3RhYmxldCINCg0KLy8gUkFOR0UgT0YgR09PRCBURU1QRVJBVFVSRQ0KY29uc3QgTUFYX1RFTVBFUkFUVVJFID0gMjYNCmNvbnN0IE1JTl9URU1QRVJBVFVSRSA9IDIyDQoNCi8vIExFVkVMIDAgSVMgV0hFTiBURU1QRVJBVFVSRSBJUyA8IDEgDQpjb25zdCBURU1QRVJBVFVSRV9MMCA9IDENCi8vIExFVkVMIDEgSVMgV0hFTiBURU1QRVJBVFVSRSBJUyBCRVRXRUVOIDIgQU5EIDUgDQpjb25zdCBURU1QRVJBVFVSRV9MMSA9IDUNCi8vIExFVkVMIDIgSVMgV0hFTiBURU1QRVJBVFVSRSBJUyBCRVRXRUVOIDYgQU5EIDExIA0KY29uc3QgVEVNUEVSQVRVUkVfTDIgPSAxMQ0KLy8gTEVWRUwgMyBJUyBXSEVOIFRFTVBFUkFUVVJFIElTIEJFVFdFRU4gMjcgQU5EIDM0DQpjb25zdCBURU1QRVJBVFVSRV9MMyA9IDM0DQovLyBMRVZFTCA0IElTIFdIRU4gVEVNUEVSQVRVUkUgSVMgQkVUV0VFTiAzNSBBTkQgNDAgDQpjb25zdCBURU1QRVJBVFVSRV9MNCA9IDQwDQovLyBMRVZFTCA1IElTIFdIRU4gVEVNUEVSQVRVUkUgPiA0NCANCmNvbnN0IFRFTVBFUkFUVVJFX0w1ID0gNDQNCg0KdmFyIG9wdGlvbnMgPSB7DQogICAgaG9zdDogJ21xdHQ6Ly8nICsgSVAsDQogICAgY2xpZW50SWQ6ICdtcXR0anNfJyArIE1hdGgucmFuZG9tKCkudG9TdHJpbmcoMTYpLnN1YnN0cigyLCA4KSwNCiAgICB1c2VybmFtZTogJ2d1ZXN0JywNCiAgICBwYXNzd29yZDogJ2d1ZXN0JywNCn07DQoNCnZhciBwb3dlciA9ICIwIg0KdmFyIGRlc2NyaXB0aW9uID0gIm5vIg0KdmFyIHRlbXBlcmF0dXJlID0gMjUNCg0KYXN5bmMgZnVuY3Rpb24gc2VuZF90b19vbmVfdG9waWNfbXF0dCh0b3BpYywgZGF0YSkgew0KICAgIHZhciBjbGllbnQgPSBtcXR0LmNvbm5lY3QoIm1xdHQ6Ly8iICsgSVAsIG9wdGlvbnMpOw0KICAgIGNsaWVudC5vbignY29ubmVjdCcsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgY2xpZW50LnB1Ymxpc2godG9waWMsIGRhdGEsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgICAgIGNsaWVudC5lbmQoKTsNCiAgICAgICAgfSk7DQogICAgfSk7DQp9DQphc3luYyBmdW5jdGlvbiBzZW5kX3RvX3R3b190b3BpY19tcXR0KHRvcGljMSwgdG9waWMyLCBkYXRhMSwgZGF0YTIpIHsNCiAgICB2YXIgY2xpZW50ID0gbXF0dC5jb25uZWN0KCJtcXR0Oi8vIiArIElQLCBvcHRpb25zKTsNCiAgICBjbGllbnQub24oJ2Nvbm5lY3QnLCBmdW5jdGlvbiAoKSB7DQogICAgICAgIGNsaWVudC5wdWJsaXNoKHRvcGljMSwgZGF0YTEsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgICAgIGNsaWVudC5wdWJsaXNoKHRvcGljMiwgZGF0YTIsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgICAgICAgICBjbGllbnQuZW5kKCk7DQogICAgICAgICAgICB9KTsNCiAgICAgICAgfSk7DQogICAgfSk7DQp9DQphc3luYyBmdW5jdGlvbiBzZW5kX3RvX3RocmVlX3RvcGljX21xdHQodG9waWMxLCB0b3BpYzIsIHRvcGljMywgZGF0YTEsIGRhdGEyLCBkYXRhMykgew0KICAgIHZhciBjbGllbnQgPSBtcXR0LmNvbm5lY3QoIm1xdHQ6Ly8iICsgSVAsIG9wdGlvbnMpOw0KICAgIGNsaWVudC5vbignY29ubmVjdCcsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgY2xpZW50LnB1Ymxpc2godG9waWMxLCBkYXRhMSwgZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgY2xpZW50LnB1Ymxpc2godG9waWMyLCBkYXRhMiwgZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgICAgIGNsaWVudC5wdWJsaXNoKHRvcGljMywgZGF0YTMsIGZ1bmN0aW9uICgpIHsNCiAgICAgICAgICAgICAgICAgICAgY2xpZW50LmVuZCgpOw0KICAgICAgICAgICAgICAgIH0pOw0KICAgICAgICAgICAgfSk7DQogICAgICAgIH0pOw0KICAgIH0pOw0KfQ0KDQpmdW5jdGlvbiBiaW4yc3RyaW5nKGFycmF5KSB7DQogICAgdmFyIHJlc3VsdCA9ICIiOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgYXJyYXkubGVuZ3RoOyArK2kpIHsNCiAgICAgICAgcmVzdWx0ICs9IChTdHJpbmcuZnJvbUNoYXJDb2RlKGFycmF5W2ldKSk7DQogICAgfQ0KICAgIHJldHVybiByZXN1bHQ7DQp9DQoNCmV4cG9ydHMuaGFuZGxlciA9IGZ1bmN0aW9uIChjb250ZXh0LCBldmVudCkgew0KICAgIHZhciBfZXZlbnQgPSBKU09OLnBhcnNlKEpTT04uc3RyaW5naWZ5KGV2ZW50KSk7DQogICAgdmFyIF9kYXRhID0gYmluMnN0cmluZyhfZXZlbnQuYm9keS5kYXRhKTsNCg0KICAgIHZhciB0ZW1wZXJhdHVyZSA9IE51bWJlcihfZGF0YSkNCiAgICBpZiAoX2RhdGEudHJpbSgpID09ICIiKSB0ZW1wZXJhdHVyZSA9IE1BWF9URU1QRVJBVFVSRQ0KDQogICAgdmFyIHBvd2VyID0gIjAiDQogICAgdmFyIGRlc2NyaXB0aW9uID0gIm5vIg0KDQogICAgaWYgKHRlbXBlcmF0dXJlIDw9IE1BWF9URU1QRVJBVFVSRSAmJiB0ZW1wZXJhdHVyZSA+PSBNSU5fVEVNUEVSQVRVUkUpIHsNCiAgICAgICAgLy8gbm9uIGRldm8gZmFyZSBudWxsYSwgYWwgbWFzc2ltbyBzdG9wcG8gdHV0dG8NCiAgICAgICAgcG93ZXIgPSAiMCINCiAgICAgICAgZGVzY3JpcHRpb24gPSAic3RvcCINCg0KICAgICAgICBkYXRhVG9waWMxID0gIlxuLT4gVGhlIHRlbXBlcmF0dXJlIGlzIGdvb2QhIFsiICsgdGVtcGVyYXR1cmUgKyAiwrBdXG4gICBTdG9wcGluZyBjb25kaXRpb25lciBhbmQgcmFkaWF0b3JzIC4uLiINCiAgICAgICAgZGF0YVRvcGljMiA9IHRlbXBlcmF0dXJlICsgIi0iICsgcG93ZXIgKyAiLSIgKyBkZXNjcmlwdGlvbg0KICAgICAgICBkYXRhVG9waWMzID0gdGVtcGVyYXR1cmUgKyAiLSIgKyBwb3dlciArICItIiArIGRlc2NyaXB0aW9uDQoNCiAgICAgICAgc2VuZF90b190aHJlZV90b3BpY19tcXR0KFRBQkxFVF9UT1BJQywgQ09ORElUSU9ORVJfVE9QSUMsIFRIRVJNT1NUQVRfVE9QSUMsIGRhdGFUb3BpYzEsIGRhdGFUb3BpYzIsIGRhdGFUb3BpYzMpOw0KICAgICAgICBjb250ZXh0LmNhbGxiYWNrKCJmZWVkYmFjayB7dGVtcGVyYXR1cmU6ICIgKyB0ZW1wZXJhdHVyZSArICIsIHBvd2VyOiAiICsgcG93ZXIgKyAiLCBkZXNjcmlwdGlvbjogIiArIGRlc2NyaXB0aW9uICsgIn0iKQ0KICAgIH0NCiAgICBlbHNlIHsNCg0KICAgICAgICAvLyBkZXZvIGFiYmFzc2FyZSBsYSB0ZW1wZXJhdHVyYSAgICANCiAgICAgICAgaWYgKHRlbXBlcmF0dXJlID4gTUFYX1RFTVBFUkFUVVJFKSB7DQoNCiAgICAgICAgICAgIGlmICh0ZW1wZXJhdHVyZSA8IFRFTVBFUkFUVVJFX0wzKQ0KICAgICAgICAgICAgICAgIHBvd2VyID0gIjEiOw0KICAgICAgICAgICAgZWxzZSBpZiAodGVtcGVyYXR1cmUgPCBURU1QRVJBVFVSRV9MNCkNCiAgICAgICAgICAgICAgICBwb3dlciA9ICIyIjsNCiAgICAgICAgICAgIGVsc2UgaWYgKHRlbXBlcmF0dXJlIDwgVEVNUEVSQVRVUkVfTDUpDQogICAgICAgICAgICAgICAgcG93ZXIgPSAiMyI7DQogICAgICAgICAgICBlbHNlDQogICAgICAgICAgICAgICAgcG93ZXIgPSAiNCI7DQoNCiAgICAgICAgICAgIGRhdGFUb3BpYzIgPSAiXG4tPiBUaGUgdGVtcGVyYXR1cmUgaXMgdG9vIGhpZ2ghIFsiICsgdGVtcGVyYXR1cmUgKyAiwrBdXG4gICBTZXR0aW5nIGNvbmRpdGlvbmVyIHRvIHBvd2VyICIgKyBwb3dlciArICIgLi4uIg0KICAgICAgICAgICAgdG9waWMgPSBDT05ESVRJT05FUl9UT1BJQw0KICAgICAgICAgICAgZGVzY3JpcHRpb24gPSAiZG93biINCiAgICAgICAgfQ0KDQogICAgICAgIC8vIGRldm8gYWx6YXJlIGxhIHRlbXBlcmF0dXJhDQogICAgICAgIGVsc2UgaWYgKHRlbXBlcmF0dXJlIDwgTUlOX1RFTVBFUkFUVVJFKSB7DQoNCiAgICAgICAgICAgIGlmICh0ZW1wZXJhdHVyZSA+IFRFTVBFUkFUVVJFX0wyKQ0KICAgICAgICAgICAgICAgIHBvd2VyID0gIjEiOw0KICAgICAgICAgICAgZWxzZSBpZiAodGVtcGVyYXR1cmUgPiBURU1QRVJBVFVSRV9MMSkNCiAgICAgICAgICAgICAgICBwb3dlciA9ICIyIjsNCiAgICAgICAgICAgIGVsc2UgaWYgKHRlbXBlcmF0dXJlID4gVEVNUEVSQVRVUkVfTDApDQogICAgICAgICAgICAgICAgcG93ZXIgPSAiMyI7DQogICAgICAgICAgICBlbHNlDQogICAgICAgICAgICAgICAgcG93ZXIgPSAiNCI7DQoNCiAgICAgICAgICAgIGRhdGFUb3BpYzIgPSAiXG4tPiBUaGUgdGVtcGVyYXR1cmUgaXMgdG9vIGxvdyEgWyIgKyB0ZW1wZXJhdHVyZSArICLCsF1cbiAgIFNldHRpbmcgcmFkaWF0b3JzIHRvIHBvd2VyICIgKyBwb3dlciArICIgLi4uIg0KICAgICAgICAgICAgdG9waWMgPSBUSEVSTU9TVEFUX1RPUElDDQogICAgICAgICAgICBkZXNjcmlwdGlvbiA9ICJ1cCINCiAgICAgICAgfQ0KDQogICAgICAgIGRhdGFUb3BpYzEgPSB0ZW1wZXJhdHVyZSArICItIiArIHBvd2VyICsgIi0iICsgZGVzY3JpcHRpb24NCiAgICAgICAgc2VuZF90b190d29fdG9waWNfbXF0dCh0b3BpYywgVEFCTEVUX1RPUElDLCBkYXRhVG9waWMxLCBkYXRhVG9waWMyKTsNCiAgICAgICAgY29udGV4dC5jYWxsYmFjaygiZmVlZGJhY2sge3RlbXBlcmF0dXJlOiAiICsgdGVtcGVyYXR1cmUgKyAiLCBwb3dlcjogIiArIHBvd2VyICsgIiwgZGVzY3JpcHRpb246ICIgKyBkZXNjcmlwdGlvbiArICJ9IikNCg0KICAgIH0NCn0NCg==
+    codeEntryType: sourceCode
     commands:
       - 'npm install mqtt'
-    codeEntryType: sourceCode
-  platform: {}
+  targetCPU: 75
+  minReplicas: 1
+  maxReplicas: 1
+  readinessTimeoutSeconds: 60
+
 ```
 
-For deploying the function you can access, from the Nuclio dashboard, to the project IOT-MQTT and create new function. When the system ask to create new function you have to select the import form yaml, and load the file "iot/mqtt/temperature/amqpconsume.yaml". At this point the dashboard show you the function IDE where it is needed to deploy on the system the function pressing the button "Deploy".
+For deploying the function 
+- Set your IP in the url of _yaml_ file
+- Create new prject on Nuclio
+- Access, from the Nuclio dashboard, to the project _YOUR-PROJECT-NAME_ and create new function. 
+- When the system ask to create new function you have to select the import form yaml
+- Load the file "src/sensors/temperaturehandlermqtt.yaml".
+At this point the dashboard show you the function IDE where it is needed to deploy on the system the function pressing the button _"Deploy"_.
 
 The same procedure could be achieved but create new function and copy the JavaScript code in the edidor part, and create the new trigger for the MQTT messages.
 
