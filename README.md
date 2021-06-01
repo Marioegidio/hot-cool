@@ -39,7 +39,7 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 ## Hot&Cool
 
-The temperature example aims to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data  manager.
+Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.
 
 The application is composed by four functions:
 
@@ -366,6 +366,6 @@ There are different libraries for many languages for interacting with protocol M
 
 #### MQTT Android Clients
 
-General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.sanyamarya.mqtizermqtt_client) for Android.
+General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.gbn.mqttclient) for Android.
 
 -----------------------------------------------------------------------------------------------------------------------------
