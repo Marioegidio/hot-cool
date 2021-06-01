@@ -7,13 +7,9 @@ Serverless is a cloud execution model that enables a simpler, more cost-effectiv
 
 Serverless computing runs code on-demand only, typically in a stateless container, on a pre-request basis, and scales transparently with the number of requests being served. Serverless computing enables end users to pay only for resources being used, never paying for idle capacity.
 
-<br>
-
 ## IoT
 
 The Internet of Things is the concept of connecting any device (so long as it has an on/off switch) to the Internet and to other connected devices. The IoT is a giant network of connected things and people – all of which collect and share data about the way they are used and about the environment around them.
-
-<br>
 
 ## Serverless Computing for IoT
 Since, serverless technology uses parallel processing and serverless databases ensures that the functions closest to the end device are executed on priority. This makes serverless functions a natural fit for edge computing applications.
@@ -189,13 +185,13 @@ Create an [IFTT](https://ifttt.com) account.
 Then you need to create a new Applet:
 
 - Use WebHooks in _"if"_ section:
-<p align=center><img src="./assets/webhooks.png" width="50%"/> </p>
+<p align=center><img src="./assets/webhooks.png" width="300"/> </p>
 
 - Use Gmail in _"then"_ section:
-<p align=center>  <img src="./assets/gmail.png" width="50%"/></p>
+<p align=center>  <img src="./assets/gmail.png" width="300"/></p>
 
 - Set the mail:
-<p align=center> <img src="./assets/mail.png" width="50%"/></p>
+<p align=center> <img src="./assets/mail.png" width="300"/></p>
 
 - Save your key to invoke the http request
 
