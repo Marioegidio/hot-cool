@@ -33,6 +33,11 @@ client.on('message', function (topic, message, packet) {
             changeTemperatureHandler(temperature, power)
             sendMail(temperature, power)
             break;
+        case 4:
+            console.log("\n-> conditioner started with max power! (Attention temperature is to high)");
+            changeTemperatureHandler(temperature, power)
+            sendMail(temperature, power)
+            break;
         default:
             if (isOn) {
                 console.log("\n-> conditioner stopped!");
@@ -66,9 +71,9 @@ function sendMail(temperature, power) {
         }
     }, function (error, response, body) {
         if (error) {
-            console.log(error);
+            //console.log(error);
         } else {
-            console.log(response.statusCode, body);
+            //console.log(response.statusCode, body);
         }
     });
 }

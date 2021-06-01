@@ -22,7 +22,7 @@ client.on("connect", function () {
 
 function sendData() {
     var randomTemperature = Math.floor(Math.random() * 45)
-    console.log("-> Invio temperatura: " + randomTemperature)
+    console.log("-> Sending temperature: " + randomTemperature)
     client.publish(topic, randomTemperature.toString());
 }
 

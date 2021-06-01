@@ -31,6 +31,10 @@ client.on('message', function (topic, message, packet) {
         case 3:
             console.log("\n-> radiators started with max power!");
             changeTemperatureHandler(temperature, power)
+            break;
+        case 4:
+            console.log("\n-> radiators started with max power! (Attention Temperature is to low)");
+            changeTemperatureHandler(temperature, power)
             sendMail(temperature, power)
             break;
         default:
@@ -63,9 +67,9 @@ function sendMail(temperature, power) {
         }
     }, function (error, response, body) {
         if (error) {
-            console.log(error);
+            //console.log(error);
         } else {
-            console.log(response.statusCode, body);
+            //console.log(response.statusCode, body);
         }
     });
 }
