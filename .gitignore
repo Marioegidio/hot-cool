@@ -5,3 +5,8 @@ src/package-lock.json
 src/.env
 src/sensors/.env
 src/devices/.env
+src/devices/node_modules/*
+src/sensors/node_modules/*
+src/devices/package-lock.json
+src/sensors/package-lock.json
+.env

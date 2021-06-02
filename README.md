@@ -245,6 +245,19 @@ General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.
 
 <br>
 
+### Set _".env"_ file
+
+**First of all you need to create a file _".env"_ in _"principal"_ directory and add:**
+
+```
+    IFTT_KEY = YOUR_IFTT_KEY
+    IP = YOUR_IP
+```
+
+_(You need to set your key and your ip before saving the file.)_
+
+<br>
+
 ### Temperature Handler Function
 
 The Temperature Handler Function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to communicate on the "iot/devices/conditioner", "iot/devices/thermostat" and "iot/devices/tablet" topics the invocation of the function. 
@@ -309,14 +322,7 @@ The Send Random Temperature Function is written in pure JavaScript and exploits 
 
 The JavaScript code is [here](src/sensors/temperature_sensor.js)
 
-**First of all you need to create a file _".env"_ in _"src/sensors"_ directory and add:**
-
-```
-    IP = YOUR_IP
-```
-_(You need to set your ip before saving the file.)_
-
-The next step is to execute the temperature sensor simulation:
+The following commands execute the temperature sensor simulation:
 
 ```sh
   cd src/sensors/
@@ -331,15 +337,9 @@ The next step is to execute the temperature sensor simulation:
 The tablet function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to receive messages on the queue "iot/devices/tablet". 
 The code is [here](src/devices/tablet.js)
 
-**First of all you need to create a file _".env"_ in _"src/devices"_ directory and add:**
 
-```
-    IFTT_KEY = YOUR_IFTT_KEY
-    IP = YOUR_IP
-```
-_(You need to set your key and your ip before saving the file.)_
 
-The next step is to execute the temperature tablet simulation:
+The following commands execute the tablet simulation:
 
 ```sh
   cd src/devices/

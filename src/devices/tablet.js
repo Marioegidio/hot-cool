@@ -1,5 +1,5 @@
 var mqtt = require('mqtt');
-require('dotenv').config()
+require('dotenv').config({ path: '../../.env' })
 
 var clientId = "tablet"
 var username = "guest"

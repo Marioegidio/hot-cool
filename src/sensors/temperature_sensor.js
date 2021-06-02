@@ -1,6 +1,6 @@
 
 var mqtt = require('mqtt');
-require('dotenv').config()
+require('dotenv').config({ path: '../../.env' })
 
 var topic = "iot/sensors/temperature"
 var connected = false;

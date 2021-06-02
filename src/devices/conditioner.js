@@ -1,6 +1,7 @@
 var mqtt = require('mqtt');
 var request = require('request')
-require('dotenv').config()
+require('dotenv').config({ path: '../../.env' })
+
 
 var topicTemperature = "iot/sensors/temperature"
 var clientId = "conditioner"
