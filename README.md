@@ -36,7 +36,7 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 ## **Hot & Cool**
 
-Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.<br><br>
+Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors, manipulate data and logging this data on an external data manager.<br><br>
 In detail it provides the simulation of a temperature sensors that sends the temperature on a topic. When arrives a new temperature is triggered a nuclio function that write on a determinated topic. 
 - if the temperature is less than 22° writes on the thermostat topic to start all radiators with some power (the power depends on the temperature). 
   - ( for example, if temperature is less than 5° power is 3, if temperature is less than 1° power is 4 ... )
