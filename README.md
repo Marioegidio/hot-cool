@@ -64,11 +64,12 @@ The first step to do is access to the Nuclio dashboard and create a new project.
 <p align="center"><img src="./assets/architecture.png" width="90%"/></p>
 
 - The **temperature sensor** sends temperature to nuclio function (sensor writes new temperature on **iot/sensors/temperature** queue) 
-- Then the **nuclio function** is triggered and takes an action (eg. if the temperature is to low writes on iot/devices/conditoner topic, if is too high writes on iot/devices/thermostat topic)
-- The **conditioner** (or the **thermostat**) recieves the temperature and the power to start itself
+- When arrives messages on "iot/sensors/temperature" the **nuclio function** is triggered and takes an action (eg. if the temperature is to low writes on iot/devices/conditoner topic, if is too high writes on iot/devices/thermostat topic)
+- The **conditioner** (or the **thermostat**) recieves the temperature and the power from messages to start itself
   - if the temperature is too low (or too high) is **triggered an iftt event** to send an email to the user
-- Now, the conditioner (or the thermostat) writes on **iot/sensors/temperature** topic to simulate the **dropping** (or **rising**) of temperature
-- The **nuclio funtion also writes on iot/devices/tablet to log** what is happening 
+- The conditioner (or the thermostat) writes on **iot/sensors/temperature** topic to simulate the **dropping** (or **rising**) of temperature
+- The **nuclio funtion also writes on iot/devices/tablet to log** what is happening
+  - the **tablet** function and the **Android MQTT Client** recieves messages on "iot/devices/tablet"
   
 <br>
 
@@ -105,9 +106,9 @@ Docker is a tool designed to make it easier to create, deploy, and run applicati
 - Update the apt package index and install packages to allow apt to use a repository over HTTPS:
 
     ```sh
-    $ sudo apt-get update
+    sudo apt-get update
 
-    $ sudo apt-get install \
+    sudo apt-get install \
         apt-transport-https \
         ca-certificates \
         curl \
@@ -118,7 +119,7 @@ Docker is a tool designed to make it easier to create, deploy, and run applicati
 - Add Docker’s official GPG key:
 
     ```sh
-    $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
     ```
 
@@ -137,8 +138,8 @@ Docker is a tool designed to make it easier to create, deploy, and run applicati
 - Update the apt package index, and install the latest version of Docker Engine and containerd, or go to the next step to install a specific version:
   
     ```sh
-    $ sudo apt-get update
-    $ sudo apt-get install docker-ce docker-ce-cli containerd.io
+    sudo apt-get update
+    sudo apt-get install docker-ce docker-ce-cli containerd.io
     ```
     
     <br>
@@ -151,8 +152,8 @@ Compose is a tool for defining and running multi-container Docker applications. 
 Install Docker Compose using the Docker Compose installation [guide](https://docs.docker.com/compose/install/#install-compose).
 
 ```sh
-$ sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-$ sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 ```
 <br>
 
@@ -164,7 +165,7 @@ The Nuclio documentation is available at [this link](https://nuclio.io/docs/late
 Start [Nuclio](https://github.com/nuclio/nuclio) using a docker container.
 
 ```sh
-$ docker run -p 8070:8070 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp nuclio/dashboard:stable-amd64
+sudo docker run -p 8070:8070 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp nuclio/dashboard:stable-amd64
 ```
 
 Browse to http://localhost:8070, create a project, and add a function. When run outside of an orchestration platform (for example, Kubernetes or Swarm), the dashboard will simply deploy to the local Docker daemon.
@@ -178,7 +179,7 @@ Browse to http://localhost:8070, create a project, and add a function. When run 
 Start [RabbitMQ](https://www.rabbitmq.com) instance with MQTT enabled using docker.
 
 ```sh
-$ docker run -p 9000:15672  -p 1883:1883 -p 5672:5672  cyrilix/rabbitmq-mqtt 
+sudo docker run -p 9000:15672  -p 1883:1883 -p 5672:5672  cyrilix/rabbitmq-mqtt 
 ```
 
 Browse to http://localhost:9000, and login using username: guest and password: guest, to access to the RabbitMQ managment, where is possible to visualize the message queues and the broker status.
@@ -193,6 +194,7 @@ Create an [IFTT](https://ifttt.com) account.
 
 Then you need to create a new Applet:
 
+- Set this name to Event Name: _"triggerIotMail"_
 - Use WebHooks in _"if"_ section:
 <p align=center><img src="./assets/webhooks.png" width="250"/> </p>
 
@@ -302,7 +304,7 @@ The Send Random Temperature Function is written in pure JavaScript and exploits 
 
 The JavaScript code is [here](src/sensors/temperature_sensor.js)
 
-First of all you need to create a file _".env"_ in _"src/sensors"_ directory and add:
+**First of all you need to create a file _".env"_ in _"src/sensors"_ directory and add:**
 
 ```
     IP = YOUR_IP
@@ -312,10 +314,10 @@ _(You need to set your ip before saving the file.)_
 The next step is to execute the temperature sensor simulation:
 
 ```sh
-  $ cd src/sensors/
-  $ npm install
-  $ node temperature_sensor.js
-  $ cd ../..
+  cd src/sensors/
+  npm install
+  node temperature_sensor.js
+  cd ../..
 ```
 <br>
 
@@ -324,7 +326,7 @@ The next step is to execute the temperature sensor simulation:
 The tablet function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to receive messages on the queue "iot/devices/tablet". 
 The code is [here](src/devices/tablet.js)
 
-First of all you need to create a file _".env"_ in _"src/devices"_ directory and add:
+**First of all you need to create a file _".env"_ in _"src/devices"_ directory and add:**
 
 ```
     IFTT_KEY = YOUR_IFTT_KEY
@@ -335,9 +337,9 @@ _(You need to set your key and your ip before saving the file.)_
 The next step is to execute the temperature tablet simulation:
 
 ```sh
-  $ cd src/devices/
-  $ npm install
-  $ node tablet.js
+  cd src/devices/
+  npm install
+  node tablet.js
 ```
 
 <br>
@@ -350,9 +352,9 @@ The code is [here](src/devices/conditioner.js)
 The following commands execute the conditioner simulation:
 
 ```sh
-  $ cd src/devices/
-  $ npm install
-  $ node conditioner.js
+  cd src/devices/
+  npm install
+  node conditioner.js
 ```
 
 ### Thermostat
@@ -363,10 +365,10 @@ The code is [here](src/devices/thermostat.js)
 The following commands execute the thermostat simulation:
 
 ```sh
-  $ cd src/devices/
-  $ npm install
-  $ node thermostat.js
-  $ cd ../..
+  cd src/devices/
+  npm install
+  node thermostat.js
+  cd ../..
 ```
 
 <br>
