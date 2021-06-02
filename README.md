@@ -360,6 +360,8 @@ The following commands execute the conditioner simulation:
   node conditioner.js
 ```
 
+<br>
+
 ### Thermostat
 
 The thermostat function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to receive messages on the queue "iot/devices/thermostat". 
