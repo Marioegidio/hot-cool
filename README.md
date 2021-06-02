@@ -57,7 +57,7 @@ The application is composed by six functions:
 * **[IoT-Client](#iot-client)**, a general purpose Android MQTT Client subcribed to "iot/devices/tablet" to show to the user what is happening.
 * **[Conidtioner](#conditioner)**, simulates the behavior of the air conditioner. This functions is subscribed to "iot/devices/conditioner". According to the power and temperature recieved it takes an action. Is a JavaScript function for Node.js and is executed on an external machine. 
 * **[Thermostat](#thermostat)**, simulates the behavior of the thermostat. This functions is subscribed to "iot/devices/thermostat". According to the power and temperature recieved it takes an action. Is a JavaScript function for Node.js and is executed on an external machine.
-*  
+
 The first step to do is access to the Nuclio dashboard and create a new project. (you can set your preferd name)
 
 <br>
