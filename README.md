@@ -302,6 +302,8 @@ At this point the dashboard show you the function IDE where it is needed to depl
 
 The same procedure could be achieved but create new function and copy the JavaScript code in the edidor part, and create the new trigger for the MQTT messages.
 
+<br>
+
 ### Send Random Temperature Function
 The Send Random Temperature Function is written in pure JavaScript and exploits the _MQTT.js_ JavaScript library to communicate on the topic "iot/sensors/temperature".
 
