@@ -38,9 +38,12 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.<br><br>
 In detail it provides the simulation of a temperature sensors that sends the temperature on a topic. When arrives a new temperature is triggered a nuclio function that write on a determinated topic. 
-- if the temperature is less than 22° writes on the thermostat topic to start all radiators with some power (the power depends on the temperature)
+- if the temperature is less than 22° writes on the thermostat topic to start all radiators with some power (the power depends on the temperature). 
+  - ( for example, if temperature is less than 5° power is 3, if temperature is less than 1° power is 4 ... )
 - if the temperature is more than 26° writes on the conditioner topic to start the conditioner with some power (the power depends on the temperature)
+  - ( for example, if temperature is more than 40° power is 3, if temperature is more than 43° power is 4 ... )
 - if the temperature is between 22° and 26° turns off the conditioner and all radiators     
+- if power is 4 is sent an email to adice the user
 
 In any case is sent a log on the tablet topic to show to the user what is happening.   
 
