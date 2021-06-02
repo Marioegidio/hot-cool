@@ -24,7 +24,7 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 
 ### **Structure**
 
-* **[Hot&Cool](#hot&cool)**
+* **[Hot&Cool](#hot-&-cool)**
 * **[Architecture](#architecture)**
 * **[Prerequisites](#prerequisites)**
 * **[Installation](#installation)**
@@ -34,26 +34,28 @@ In the IoT era, you cannot afford downtime, as there are many essential services
 <br>
 
 
-## **Hot&Cool**
+## **Hot & Cool**
 
 Hot&Cool is a project with the purpose to demonstrate the potential of the suggested architecture to collect data from IoT sensors and logging this data on an external data manager.<br><br>
-In detail it provides the simulation of a temperature sensors that sends the temperature on a topic. When arrives a new temperature is triggered a function that write on a determinated topic. 
+In detail it provides the simulation of a temperature sensors that sends the temperature on a topic. When arrives a new temperature is triggered a nuclio function that write on a determinated topic. 
 - if the temperature is less than 22° writes on the thermostat topic to start all radiators with some power (the power depends on the temperature)
 - if the temperature is more than 26° writes on the conditioner topic to start the conditioner with some power (the power depends on the temperature)
 - if the temperature is between 22° and 26° turns off the conditioner and all radiators     
+
 In any case is sent a log on the tablet topic to show to the user what is happening.   
 
 <br>
 
-The application is composed by five functions:
+The application is composed by six functions:
 
 * **[Temperature Handler](#temperature-handler-function)**, is triggered by a new MQTT message on the topic "iot/sensors/temperature".
-* **[Temperature Sensor](#send-random-temperature-function)**, sends a new temperature value on the MQTT on the topic "iot/sensors/temperature" once a minute.
+* **[Temperature Sensor](#send-random-temperature-function)**, sends a new temperature value on the MQTT topic "iot/sensors/temperature" once a minute.
 * **[Tablet](#tablet)**, logs the behavior of the Temperature Handler function, this functions is subscribed to "iot/devices/tablet". Is a JavaScript function for Node.js and is executed on an external machine. 
-* **[Smartphone](#iot-client)**, a general purpose Android MQTT Client subcribed to "iot/devices/tablet" to show to the user what is happening.
-* **[Conidtioner](#conditioner)**, simulates the behavior of the air conditioner. This functions is subscribed to "iot/devices/conditioner". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
-* **[Thermostat](#thermostat)**, simulates the behavior of the thermostat. This functions is subscribed to "iot/devices/thermostat". According to the power and temperature recieved take an action. Is a JavaScript function for Node.js and is executed on an external machine. 
-The first step to do is access to the Nuclio dashboard and create a new project named IOT-MQTT.
+* **[IoT-Client](#iot-client)**, a general purpose Android MQTT Client subcribed to "iot/devices/tablet" to show to the user what is happening.
+* **[Conidtioner](#conditioner)**, simulates the behavior of the air conditioner. This functions is subscribed to "iot/devices/conditioner". According to the power and temperature recieved it takes an action. Is a JavaScript function for Node.js and is executed on an external machine. 
+* **[Thermostat](#thermostat)**, simulates the behavior of the thermostat. This functions is subscribed to "iot/devices/thermostat". According to the power and temperature recieved it takes an action. Is a JavaScript function for Node.js and is executed on an external machine.
+*  
+The first step to do is access to the Nuclio dashboard and create a new project. (you can set your preferd name)
 
 <br>
 
@@ -61,18 +63,18 @@ The first step to do is access to the Nuclio dashboard and create a new project 
 
 <p align="center"><img src="./assets/architecture.png" width="90%"/></p>
 
-- To start, the **sensor** send temperature to nuclio function (sensor write on **iot/sensors/temperature**)
-- The **nuclio function** takes an action (eg. if the temperature is to low write on iot/devices/conditoner topic)
+- The **temperature sensor** sends temperature to nuclio function (sensor writes new temperature on **iot/sensors/temperature** queue) 
+- Then the **nuclio function** is triggered and takes an action (eg. if the temperature is to low writes on iot/devices/conditoner topic, if is too high writes on iot/devices/thermostat topic)
 - The **conditioner** (or the **thermostat**) recieves the temperature and the power to start itself
-  - if the temperature is too low (or high) is **triggered a iftt event** to send an email to the user
-- Now, the conditioner (or the thermostat) write on **iot/sensors/temperature** topic to simulate the **dropping** (or **rising**) of temperature
-- The **nuclio funtion also write on iot/devices/tablet to log** what is happening 
+  - if the temperature is too low (or too high) is **triggered an iftt event** to send an email to the user
+- Now, the conditioner (or the thermostat) writes on **iot/sensors/temperature** topic to simulate the **dropping** (or **rising**) of temperature
+- The **nuclio funtion also writes on iot/devices/tablet to log** what is happening 
   
 <br>
 
 ## **Prerequisites**
 - OS: 
-    - Ubuntu 18.04 LTS
+    - Ubuntu 21.04 LTS
 - Software:
     - Docker and Docker Compose (Application containers engine)
     - Nuclio (Serverless computing provider)
@@ -85,7 +87,7 @@ The first step to do is access to the Nuclio dashboard and create a new project 
 
 ## **Installation**
 
-This project is made on top of one local machine an Linux Ubuntu 18.04 LTS machine. 
+This project is made on top of one local machine an Linux Ubuntu 21.04 LTS machine. 
 
 <br>
 
@@ -192,15 +194,15 @@ Create an [IFTT](https://ifttt.com) account.
 Then you need to create a new Applet:
 
 - Use WebHooks in _"if"_ section:
-<p align=center><img src="./assets/webhooks.png" width="300"/> </p>
+<p align=center><img src="./assets/webhooks.png" width="250"/> </p>
 
 - Use Gmail in _"then"_ section:
-<p align=center>  <img src="./assets/gmail.png" width="300"/></p>
+<p align=center>  <img src="./assets/gmail.png" width="250"/></p>
 
 - Set the mail:
-<p align=center> <img src="./assets/mail.png" width="300"/></p>
+<p align=center> <img src="./assets/mail.png" width="250"/></p>
 
-- Save your key to invoke the http request
+- Save your key to call the http request from node functions
 
 
 <br>
@@ -228,6 +230,8 @@ There are different libraries for many languages for interacting with protocol M
 
 General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.gbn.mqttclient) for Android.
 
+<br>
+
 -----------------------------------------------------------------------------------------------------------------------------
 
 <br>
@@ -241,7 +245,7 @@ General purpose [MQTT client](https://play.google.com/store/apps/details?id=com.
 The Temperature Handler Function is written in pure JavaScript and exploits the _mqtt_ JavaScript library to communicate on the "iot/devices/conditioner", "iot/devices/thermostat" and "iot/devices/tablet" topics the invocation of the function. 
 The JavaScript code is [here](src/nuclio_functions/temperatureHandlerMqtt-nuclio.js)
 
-The function is deployed using the Docker compose specifics for Nuclio. This is achieved by define a new yaml file that declares all functions specifications and source code. The source code of the function (the JavaScript code) is encoded in base64 and copied in the attribute "functionSourceCode",  moreover, is defined a new trigger on the mqtt protocol that allows to automatically invoke the function when a new message is coming on the topic "iot/sensors/temperature". Since the functions exploits the mqtt in the "commands" attribute is added the command to install on Node.js the mqtt (npm install mqtt).
+The function is deployed using the Docker compose specifics for Nuclio. This is achieved by define a new yaml file that declares all functions specifications and source code. The source code of the function (the JavaScript code) is encoded in base64 and copied in the attribute "functionSourceCode",  moreover, is defined a new trigger on the mqtt protocol that allows to automatically call the function when a new message is coming on the topic "iot/sensors/temperature". Since the functions exploits the mqtt in the "commands" attribute is added the command to install on Node.js the mqtt (npm install mqtt).
 
 ```yaml
 metadata:
@@ -283,12 +287,12 @@ spec:
 
 ```
 
-For deploying the function 
-- Set your IP in the url of _yaml_ file
-- Create a new project on Nuclio
-- Access, from the Nuclio dashboard, to the project _YOUR-PROJECT-NAME_ and create new function. 
-- When the system ask to create new function you have to select the import form yaml
-- Load the file "src/sensors/temperaturehandlermqtt.yaml".
+To deploy the function: 
+1. Set your IP in the url of _yaml_ file
+2. Create a new project on Nuclio
+3. Access, from the Nuclio dashboard, to the project _YOUR-PROJECT-NAME_ and create new function. 
+4. When the system ask to create new function you have to select the import form yaml
+5. Load the file "src/sensors/temperaturehandlermqtt.yaml".
 At this point the dashboard show you the function IDE where it is needed to deploy on the system the function pressing the button _"Deploy"_.
 
 The same procedure could be achieved but create new function and copy the JavaScript code in the edidor part, and create the new trigger for the MQTT messages.
@@ -303,7 +307,7 @@ First of all you need to create a file _".env"_ in _"src/sensors"_ directory and
 ```
     IP = YOUR_IP
 ```
-_(You need to set your ip before to save the file.)_
+_(You need to set your ip before saving the file.)_
 
 The next step is to execute the temperature sensor simulation:
 
@@ -311,6 +315,7 @@ The next step is to execute the temperature sensor simulation:
   $ cd src/sensors/
   $ npm install
   $ node temperature_sensor.js
+  $ cd ../..
 ```
 <br>
 
@@ -325,7 +330,7 @@ First of all you need to create a file _".env"_ in _"src/devices"_ directory and
     IFTT_KEY = YOUR_IFTT_KEY
     IP = YOUR_IP
 ```
-_(You need to set your key and your ip before to save the file.)_
+_(You need to set your key and your ip before saving the file.)_
 
 The next step is to execute the temperature tablet simulation:
 
@@ -361,6 +366,7 @@ The following commands execute the thermostat simulation:
   $ cd src/devices/
   $ npm install
   $ node thermostat.js
+  $ cd ../..
 ```
 
 <br>
